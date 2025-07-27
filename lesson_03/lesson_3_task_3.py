@@ -1,6 +1,7 @@
 from address import Address
 from mailing import Mailing
 
+
 to_address = Address("654000", "Новокузнецк", "Кирова", "20", "10")
 from_address = Address("650000", "Кемерово", "Ленина", "12", "5")
 
