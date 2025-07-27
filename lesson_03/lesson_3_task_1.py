@@ -1,6 +1,5 @@
 from user import User
 
-
 my_user = User("Alex", "Ivanov")
 
 my_user.print_first_name()

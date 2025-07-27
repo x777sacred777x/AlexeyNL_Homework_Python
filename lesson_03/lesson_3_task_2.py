@@ -1,6 +1,5 @@
 from smartphone import Smartphone
 
-
 catalog = [
     Smartphone("Apple", "iPhone 16", "+79123336050"),
     Smartphone("Samsung", "Galaxy S24", "+79231234567"),
