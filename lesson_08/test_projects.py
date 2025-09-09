@@ -1,87 +1,109 @@
-# Позитивные тесты — проверяют корректную работу API при правильных данных
+# ✅ Позитивные тесты — проверяют корректную работу API при валидных данных
 
 def test_create_project(api):
-    # Подготавливаем валидные данные для создания проекта
-    valid_project_payload = {'title': 'Test Project'}
-    # Отправляем запрос на создание проекта
-    response = api.create_project(valid_project_payload)
-    # Проверяем, что статус ответа — 201 (Created)
-    assert response.status_code == 201, f"Expected 201, got {
-        response.status_code}"
-
+    """
+    Проверяет успешное создание проекта.
+    Ожидается статус 201 и наличие ID в теле ответа.
+    """
+    payload = {'title': 'Test Project'}  # Данные нового проекта
+    response = api.create_project(payload)  # Отправляем запрос на создание
+    assert response.status_code == 201, f"Expected 201, got {response.status_code}"  # Проверяем статус
+    data = response.json()  # Получаем тело ответа в формате JSON
+    # В зависимости от структуры API, проект может быть в разных ключах
+    project = data.get('content') or data.get('data') or data
+    assert 'id' in project, "Response missing 'id'"  # Проверяем наличие ID
+    # Проверяем совпадение названия, если оно возвращается
+    if 'title' in project:
+        assert project['title'] == payload['title'], "Title mismatch"
 
 def test_get_all_projects(api):
-    # Отправляем запрос на получение всех проектов
-    response = api.get_all_projects()
-    # Проверяем, что статус ответа — 200 (OK)
-    assert response.status_code == 200, f"Expected 200, got {
-        response.status_code}"
-    # Проверяем, что список проектов не пустой
-    assert len(response.json()) > 0, "No projects found"
-
+    """
+    Проверяет получение списка всех проектов.
+    Ожидается статус 200 и непустой список в ключе 'content'.
+    """
+    response = api.get_all_projects()  # Запрашиваем все проекты
+    assert response.status_code == 200, f"Expected 200, got {response.status_code}"  # Проверяем статус
+    data = response.json()
+    projects = data.get('content')  # Получаем список проектов
+    assert isinstance(projects, list), f"Expected list in 'content', got {type(projects)}"  # Проверяем тип
+    assert len(projects) > 0, "No projects found"  # Убеждаемся, что список не пуст
+    for project in projects:
+        # Проверяем, что каждый проект содержит обязательные поля
+        assert 'id' in project and 'title' in project, "Project missing required fields"
 
 def test_get_project_by_id(api):
-    # Сначала создаём проект, чтобы получить его ID
-    valid_project_payload = {'title': 'Test Project'}
-    create_response = api.create_project(valid_project_payload)
-    # Извлекаем ID созданного проекта
-    project_id = create_response.json().get('id')
-    # Отправляем запрос на получение проекта по ID
-    response = api.get_project_by_id(project_id)
-    # Проверяем, что статус ответа — 200 (OK)
-    assert response.status_code == 200, f"Expected 200, got {
-        response.status_code}"
-
+    """
+    Проверяет получение проекта по ID.
+    Сначала создаётся проект, затем запрашивается по ID.
+    """
+    payload = {'title': 'Test Project'}
+    create_response = api.create_project(payload)  # Создаём проект
+    project_id = create_response.json().get('id')  # Получаем его ID
+    response = api.get_project_by_id(project_id)  # Запрашиваем по ID
+    assert response.status_code == 200, f"Expected 200, got {response.status_code}"  # Проверяем статус
+    data = response.json()
+    assert data['id'] == project_id, "ID mismatch"  # Проверяем ID
+    assert data['title'] == payload['title'], "Title mismatch"  # Проверяем название
 
 def test_update_project(api):
-    # Создаём проект, который будем обновлять
-    valid_project_payload = {'title': 'Updated Project'}
-    create_response = api.create_project(valid_project_payload)
-    project_id = create_response.json().get('id')
-    # Подготавливаем новые данные для обновления
-    updated_payload = {'title': 'Updated Project Name'}
-    # Отправляем запрос на обновление проекта
-    response = api.update_project(project_id, updated_payload)
-    # Проверяем, что статус ответа — 200 (OK)
-    assert response.status_code == 200, f"Expected 200, got {
-        response.status_code}"
+    """
+    Проверяет обновление проекта.
+    Ожидается статус 200 и наличие ID в теле ответа.
+    """
+    payload = {'title': 'Initial Title'}
+    create_response = api.create_project(payload)  # Создаём проект
+    project_id = create_response.json().get('id')  # Получаем его ID
+    updated_payload = {'title': 'Updated Title'}  # Новые данные
+    response = api.update_project(project_id, updated_payload)  # Обновляем проект
+    assert response.status_code == 200, f"Expected 200, got {response.status_code}"  # Проверяем статус
+    data = response.json()
+    # В зависимости от структуры API, проект может быть в разных ключах
+    project = data.get('content') or data.get('data') or data
+    assert 'id' in project, "Response missing 'id'"  # Проверяем наличие ID
+    assert project['id'] == project_id, "ID mismatch after update"  # Проверяем ID
+    # Проверяем, что название обновилось
+    if 'title' in project:
+        assert project['title'] == updated_payload['title'], "Title not updated"
 
-
-# Негативные тесты — проверяют корректную обработку ошибок при
-# некорректных данных
+# ❌ Негативные тесты — проверяют корректную обработку ошибок при невалидных данных
 
 def test_create_project_missing_title(api):
-    # Отправляем запрос с пустым телом (нет обязательного поля title)
-    invalid_payload = {}
-    response = api.create_project(invalid_payload)
-    # Ожидаем ошибку 400 (Bad Request)
-    assert response.status_code == 400, f"Expected 400, got {
-        response.status_code}"
-
+    """
+    Проверяет создание проекта без обязательного поля title.
+    Ожидается ошибка 400 и сообщение об ошибке в теле.
+    """
+    response = api.create_project({})  # Пустой payload
+    assert response.status_code == 400, f"Expected 400, got {response.status_code}"  # Проверяем статус
+    error = response.json()
+    # Проверяем наличие сообщения об ошибке
+    assert 'error' in error or 'message' in error, "No error message in response"
 
 def test_get_project_by_invalid_id(api):
-    # Отправляем запрос с несуществующим ID проекта
-    response = api.get_project_by_id('invalid-id')
-    # Ожидаем ошибку 404 (Not Found)
-    assert response.status_code == 404, f"Expected 404, got {
-        response.status_code}"
-
+    """
+    Проверяет запрос проекта по несуществующему ID.
+    Ожидается ошибка 404 и сообщение об ошибке.
+    """
+    response = api.get_project_by_id('invalid-id')  # Некорректный ID
+    assert response.status_code == 404, f"Expected 404, got {response.status_code}"  # Проверяем статус
+    error = response.json()
+    assert 'error' in error or 'message' in error, "No error message in response"  # Проверяем сообщение
 
 def test_update_project_with_invalid_id(api):
-    # Пытаемся обновить проект с несуществующим ID
-    invalid_project_id = 'nonexistent-id'
-    updated_payload = {'title': 'Updated Title'}
-    response = api.update_project(invalid_project_id, updated_payload)
-    # Ожидаем ошибку 404 (Not Found)
-    assert response.status_code == 404, f"Expected 404, got {
-        response.status_code}"
-
+    """
+    Проверяет обновление проекта с несуществующим ID.
+    Ожидается ошибка 404 и сообщение об ошибке.
+    """
+    response = api.update_project('nonexistent-id', {'title': 'Updated Title'})  # Некорректный ID
+    assert response.status_code == 404, f"Expected 404, got {response.status_code}"  # Проверяем статус
+    error = response.json()
+    assert 'error' in error or 'message' in error, "No error message in response"  # Проверяем сообщение
 
 def test_create_project_invalid_title(api):
-    # Отправляем запрос с некорректным типом данных для title (число вместо
-    # строки)
-    invalid_payload = {'title': 12345}
-    response = api.create_project(invalid_payload)
-    # Ожидаем ошибку 400 (Bad Request)
-    assert response.status_code == 400, f"Expected 400, got {
-        response.status_code}"
+    """
+    Проверяет создание проекта с некорректным типом title (число вместо строки).
+    Ожидается ошибка 400 и сообщение об ошибке.
+    """
+    response = api.create_project({'title': 12345})  # Некорректный тип данных
+    assert response.status_code == 400, f"Expected 400, got {response.status_code}"  # Проверяем статус
+    error = response.json()
+    assert 'error' in error or 'message' in error, "No error message in response"  # Проверяем сообщение
