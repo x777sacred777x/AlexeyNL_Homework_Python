@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from lesson_09.BD_Table1 import Users  # Импорт модели таблицы Users
+from lesson_09.BD_Table import Users  # Импорт модели таблицы Users
 
 # Строка подключения к базе данных PostgreSQL
 db_connection_string = "postgresql://postgres:123@localhost:5432/postgres"
